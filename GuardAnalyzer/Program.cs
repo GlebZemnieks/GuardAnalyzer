@@ -9,18 +9,6 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
     {
         static void Main(string[] args)
         {
-            string test1 = "\n" +
-                "something another\n" +
-                "Guard.ArgumentNotNull(() => storage);\n" +
-                "Guard.IsNotNull(() => endpoint);\n" +
-                "Guard.ArgumentNotNullOrEmpty(() => catalog);\n" +
-                "something another";
-            foreach(ChangeItem item in GuardAnalyzer.AnalyzeFile(test1))
-            {
-                Console.WriteLine(item);
-            }
-
-            Console.ReadKey();
             // arg1 : path to folder
             // arg2 : work mode
             //      Preview - create ChangeModel and serialize to file
@@ -34,6 +22,14 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             // if(Commit || Force)
             //      parse ChangeModel
             //      commit changes
+
+            ArrayList files = (new FileListBuilder())
+                .ParseDirectory("C:\\Development\\SonDar\\Paragon\\GuardAnalyzer","Example*.cs");
+            foreach (ChangeItem item in (new GuardAnalyzer()).Analyze(files).Items)
+            {
+                Console.WriteLine(item);
+            }
+            Console.ReadKey();
         }
     }
 
@@ -52,7 +48,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             IEnumerable directories = Directory.EnumerateDirectories(path);
             foreach (String directory in directories)
             {
-                fileList.AddRange(this.ParseDirectory(directory));
+                fileList.AddRange(this.ParseDirectory(directory, wildcard));
             }
             return fileList;
         }
@@ -87,14 +83,14 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
 
         public override string ToString()
         {
-            return "\"" + this.From + "\" => \"" + this.To + "\"";
+            return "File : " + this.DomainPath + ":" + this.Line + "\n\"" + this.From + "\" => \"" + this.To + "\"";
         }
 
     }
 
     class ChangeModel
     {
-        ArrayList Items { get; }
+        public ArrayList Items { get; }
 
         public ChangeModel()
         {
@@ -122,30 +118,31 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
     class GuardAnalyzer
     {
         // Call this.AnalyzeFile for all file in list and create general ChangeModel. 
-        ChangeModel Analyze(ArrayList files)
+        public ChangeModel Analyze(ArrayList files)
         {
             ChangeModel changes = new ChangeModel();
             foreach (String fileName in files)
             {
-                changes.AddItems(GuardAnalyzer.AnalyzeFile(fileName));
+                changes.AddItems(this.AnalyzeFile(fileName));
             }
             return changes;
         }
 
         // parse file by recursive expression and return list of ChangeItems
-        public static ArrayList AnalyzeFile(string path)
+        private ArrayList AnalyzeFile(string path)
         {
             ArrayList changeItems = new ArrayList();
+            string[] lines = File.ReadAllLines(path);
+
             // TODO Add all Guard methods list. 
             string methodsList = "ArgumentNotNull,ArgumentNotNullOrEmpty,IsNotNull";
             string isMatch = "Guard.[" + methodsList + "]";
-            string[] lines = path.Split('\n');
-
+            
             // Detect lines
             for (int i=0; i< lines.Length; i++){
                 if (Regex.IsMatch(lines[i], isMatch))
                 {
-                    changeItems.Add(new ChangeItem(path, i, lines[i]));
+                    changeItems.Add(new ChangeItem(path, i, lines[i].Trim()));
                 }
             }
             // create line to change
@@ -156,7 +153,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                 string method = Regex.Match(item.From, detectMethods).Value;
                 string[] temp = Regex.Match(item.From, detectParams).Value.Split(')')[0].Split(' ');
                 string param = temp[temp.Length - 1];
-                //Guard.ArgumentNotNull(storage, nameof(storage));
+                // TODO change to StringBuilder
                 item.To = "Guards." + method + "(" + param + ", nameof(" + param + "));";
             }
 

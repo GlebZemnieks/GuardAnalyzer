@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Guards;
 
 namespace SonDar.ParagonChallenge.Example
 {
-    class ExampleClass
+    class Example2
     {
-
-        public void Test(String test)
+        public void main()
         {
             //Example 
             string test1 = "test";
@@ -14,7 +17,7 @@ namespace SonDar.ParagonChallenge.Example
 
             Guard.ArgumentNotNull(() => test1);
             Guard.ArgumentNotNull(() => test2);
-        }
 
+        }
     }
 }
