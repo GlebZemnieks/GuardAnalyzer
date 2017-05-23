@@ -37,7 +37,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
         static void Main(string[] args)
         { 
             // Test data
-            args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Force","Default","Example*.cs"};
+            //args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Force","Default","Example*.cs"};
             // arg0 : path to folder
             string pathToStartFolder = args[0];
             // arg1 : work mode
