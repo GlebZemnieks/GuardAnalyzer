@@ -47,6 +47,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             {
                 path = args[2];
             }
+            // arg3 - wirdcard(Optional)
             string wildcard = "*.cs";
             if (args.Length > 3)
             {
