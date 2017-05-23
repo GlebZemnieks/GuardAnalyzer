@@ -26,7 +26,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             {
                 case "Preview": return WorkMode.Preview;
                 case "Commit": return WorkMode.Commit;
-                case "Force": return WorkMode.Force; No testing -> no force mode!
+                case "Force": return WorkMode.Force;// No testing -> no force mode!
                 default: throw new Exception("Unknown Mode [args[1] = " + mode + "]");
             }
         }
