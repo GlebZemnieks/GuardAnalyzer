@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace SonDar.ParagonChallenge.GuardAnalyzer
 {
@@ -25,7 +26,14 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
 
             ArrayList files = (new FileListBuilder())
                 .ParseDirectory("C:\\Development\\SonDar\\Paragon\\GuardAnalyzer","Example*.cs");
-            foreach (ChangeItem item in (new GuardAnalyzer()).Analyze(files).Items)
+            ChangeModel model = (new GuardAnalyzer()).Analyze(files);
+            foreach (ChangeItem item in model.Items)
+            {
+                Console.WriteLine(item);
+            }
+            string path = Directory.GetCurrentDirectory() + "\\changes.txt";
+            model.Save(path);
+            foreach (ChangeItem item in ChangeModel.Load(path).Items)
             {
                 Console.WriteLine(item);
             }
@@ -62,24 +70,13 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
         public string From { get; }
         public string To { get; set; }
 
-        public ChangeItem(string path, int line, string from)
+        public ChangeItem(string path, int line, string from, string to = null)
         {
             this.DomainPath = path;
             this.Line = line;
             this.From = from;
+            this.To = to;
         } 
-
-        static ChangeItem Load(string fileLine)
-        {
-            // TODO Parse line and return saved Change object
-            return null;
-        }
-
-        string Save()
-        {
-            // TODO Serialize current object and return string 
-            return null;
-        }
 
         public override string ToString()
         {
@@ -97,20 +94,44 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             Items = new ArrayList();
         }
 
+        public void AddItem(ChangeItem item)
+        {
+            this.Items.Add(item);
+        }
+
         public void AddItems(ArrayList items)
         {
             this.Items.AddRange(items);
         }
 
-        static ChangeModel Load(string path)
+        public static ChangeModel Load(string path)
         {
-            // TODO Parse add items from file by path
-            return null;
+            string json = "";
+            using (StreamReader sr = new StreamReader(path))
+            {
+                // TODO change to StringBuilder
+                json += sr.ReadToEnd();
+            }
+            ChangeModel returnModel = new ChangeModel();
+            dynamic model = JsonConvert.DeserializeObject(json);
+            foreach (dynamic obj in model.Items)
+            {
+                returnModel.AddItem(new ChangeItem(
+                (string)obj.DomainPath, 
+                (int)obj.Line,
+                (string)obj.From,
+                (string)obj.To));
+            }
+            return returnModel;
         }
 
-        void Save(string path)
+        public void Save(string path)
         {
-            // TODO Save all items to file by path
+            string json = JsonConvert.SerializeObject(this);
+            using (StreamWriter sw = new StreamWriter(path, false, System.Text.Encoding.Default))
+            {
+                sw.WriteLine(json);
+            }
         }
 
     }
