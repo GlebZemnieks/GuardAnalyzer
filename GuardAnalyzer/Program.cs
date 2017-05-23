@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections;
 using System.Text.RegularExpressions;
+using SonDar.Core.Utils;
 using Newtonsoft.Json;
 
 namespace SonDar.ParagonChallenge.GuardAnalyzer
@@ -25,7 +26,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             {
                 case "Preview": return WorkMode.Preview;
                 case "Commit": return WorkMode.Commit;
-                //case "Force": return WorkMode.Force; No testing -> no force mode!
+                case "Force": return WorkMode.Force; No testing -> no force mode!
                 default: throw new Exception("Unknown Mode [args[1] = " + mode + "]");
             }
         }
@@ -36,7 +37,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
         static void Main(string[] args)
         {
             // Test data
-            args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Commit","Default","Example*.cs"};
+            args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Force","Default","Example*.cs"};
             // arg0 : path to folder
             string pathToStartFolder = args[0];
             // arg1 : work mode
@@ -75,7 +76,14 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                 bool somethingWrong = false;
                 if (mode != WorkMode.Force)
                 {
-                    model = ChangeModel.Load(path);
+                    try
+                    {
+                        model = ChangeModel.Load(path);
+                    }
+                    catch
+                    {
+                        Logger.Log("Trouble with parsing '" + path + "'. Call Preview before Commit" );
+                    }
                 }
 
                 foreach (ChangeItem item in model.Items)
