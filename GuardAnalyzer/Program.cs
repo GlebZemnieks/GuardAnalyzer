@@ -71,13 +71,41 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             }
             if (mode == WorkMode.Commit || mode == WorkMode.Force)
             {
+                ChangeModel wrongItem = new ChangeModel();
+                bool somethingWrong = false;
                 if (mode != WorkMode.Force)
                 {
                     model = ChangeModel.Load(path);
                 }
                 foreach (ChangeItem item in model.Items)
                 {
-                    //      commit changes ?? 
+                    string[] lines = File.ReadAllLines(item.DomainPath);
+                    if (lines[item.Line].Contains(item.From))
+                    {
+                        lines[item.Line].Replace(item.From, item.To);
+                    } else
+                    {
+                        somethingWrong = true;
+                        wrongItem.AddItem(item);
+                        continue;
+                    }
+                    using (StreamWriter sw = new StreamWriter(path, false, System.Text.Encoding.Default))
+                    {
+                        foreach(string line in lines)
+                        {
+                            sw.WriteLine(line);
+                        }
+                    }
+                }
+                if (somethingWrong)
+                {
+                    wrongItem.Save(path + "wrong");
+                    Console.WriteLine("Somthing wrong");
+                    foreach(ChangeItem item in wrongItem.Items)
+                    {
+                        Console.WriteLine(item.ToString());
+                    }
+
                 }
             }
 
