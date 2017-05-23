@@ -21,8 +21,8 @@ namespace SonDar.Core.Utils
 
     public class Logger
     {
-        //private static LoggerInterface logger = new ConsoleLogger();
-        private static LoggerInterface logger = new EmptyLogger();
+        private static LoggerInterface logger = new ConsoleLogger();
+        //private static LoggerInterface logger = new EmptyLogger();
 
         public void SetLogger(LoggerInterface logger)
         {

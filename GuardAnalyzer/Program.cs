@@ -35,7 +35,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
     class Program
     {
         static void Main(string[] args)
-        {
+        { 
             // Test data
             args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Force","Default","Example*.cs"};
             // arg0 : path to folder
@@ -60,9 +60,10 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             {
                 ArrayList files = (new FileListBuilder()).ParseDirectory(pathToStartFolder, wildcard);
                 model = (new GuardAnalyzer()).Analyze(files);
+                Logger.Log("Preview : ");
                 foreach (ChangeItem item in model.Items)
                 {
-                    Console.WriteLine(item);
+                    Logger.Log(item.ToString());
                 }
                 if(mode != WorkMode.Force)
                 {
@@ -88,9 +89,11 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
 
                 foreach (ChangeItem item in model.Items)
                 {
+                    Logger.Log("Try to change item : " + item.ToString());
                     string[] lines = File.ReadAllLines(item.DomainPath);
                     if (lines[item.Line].Contains(item.From))
                     {
+                        Logger.Log("OK");
                         lines[item.Line] = lines[item.Line].Replace(item.From, item.To);
                     } else
                     {
@@ -98,7 +101,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                         wrongItem.AddItem(item);
                         continue;
                     }
-                    using (StreamWriter sw = new StreamWriter(path, false, System.Text.Encoding.Default))
+                    using (StreamWriter sw = new StreamWriter(item.DomainPath, false, System.Text.Encoding.Default))
                     {
                         foreach(string line in lines)
                         {
@@ -106,13 +109,14 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                         }
                     }
                 }
+                Logger.Log("Done");
                 if (somethingWrong)
                 {
                     wrongItem.Save(path + "wrong");
-                    Console.WriteLine("Somthing wrong");
+                    Logger.Log("Somthing wrong");
                     foreach(ChangeItem item in wrongItem.Items)
                     {
-                        Console.WriteLine(item.ToString());
+                         Logger.Log(item.ToString());
                     }
 
                 }
