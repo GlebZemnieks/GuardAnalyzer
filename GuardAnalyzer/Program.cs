@@ -36,7 +36,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
         static void Main(string[] args)
         {
             // Test data
-            args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Preview","Default","Example*.cs"};
+            args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Commit","Default","Example*.cs"};
             // arg0 : path to folder
             string pathToStartFolder = args[0];
             // arg1 : work mode
@@ -77,6 +77,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                 {
                     model = ChangeModel.Load(path);
                 }
+
                 foreach (ChangeItem item in model.Items)
                 {
                     string[] lines = File.ReadAllLines(item.DomainPath);
