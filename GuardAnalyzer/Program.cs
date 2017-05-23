@@ -83,7 +83,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                     string[] lines = File.ReadAllLines(item.DomainPath);
                     if (lines[item.Line].Contains(item.From))
                     {
-                        lines[item.Line].Replace(item.From, item.To);
+                        lines[item.Line] = lines[item.Line].Replace(item.From, item.To);
                     } else
                     {
                         somethingWrong = true;
@@ -248,7 +248,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                 string[] temp = Regex.Match(item.From, detectParams).Value.Split(')')[0].Split(' ');
                 string param = temp[temp.Length - 1];
                 // TODO change to StringBuilder
-                item.To = "Guards." + method + "(" + param + ", nameof(" + param + "));";
+                item.To = "Guard." + method + "(" + param + ", nameof(" + param + "));";
             }
 
             return changeItems; 
