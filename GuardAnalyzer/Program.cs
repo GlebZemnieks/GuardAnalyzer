@@ -6,37 +6,80 @@ using Newtonsoft.Json;
 
 namespace SonDar.ParagonChallenge.GuardAnalyzer
 {
+
+    //      Preview - create ChangeModel and serialize to file
+    //      Commit  - change all files by ChangeModel(denaid if Preview not called yet)
+    //      Force   - Create Change model and commit in same times
+    enum WorkMode
+    {
+        Preview,
+        Commit,
+        Force
+    }
+
+    static class WorkModeByString
+    {
+        public static WorkMode getMode(string mode)
+        {
+            switch (mode)
+            {
+                case "Preview": return WorkMode.Preview;
+                case "Commit": return WorkMode.Commit;
+                //case "Force": return WorkMode.Force; No testing -> no force mode!
+                default: throw new Exception("Unknown Mode [args[1] = " + mode + "]");
+            }
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            // arg1 : path to folder
-            // arg2 : work mode
-            //      Preview - create ChangeModel and serialize to file
-            //      Commit  - change all files by ChangeModel(denaid if Preview not called yet)
-            //      Force   - Create Change model and commit in same times
-
-            // if(Preview || Force)
-            //      call FileListBuiled
-            //      call GuardAnalyzer 
-            //      serialize model to file
-            // if(Commit || Force)
-            //      parse ChangeModel
-            //      commit changes
-
-            ArrayList files = (new FileListBuilder())
-                .ParseDirectory("C:\\Development\\SonDar\\Paragon\\GuardAnalyzer","Example*.cs");
-            ChangeModel model = (new GuardAnalyzer()).Analyze(files);
-            foreach (ChangeItem item in model.Items)
-            {
-                Console.WriteLine(item);
-            }
+            // Test data
+            args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Preview","Default","Example*.cs"};
+            // arg0 : path to folder
+            string pathToStartFolder = args[0];
+            // arg1 : work mode
+            WorkMode mode = WorkModeByString.getMode(args[1]);
+            // arg2 : changeModel file (Optional)
             string path = Directory.GetCurrentDirectory() + "\\changes.txt";
-            model.Save(path);
-            foreach (ChangeItem item in ChangeModel.Load(path).Items)
+            if (args.Length > 2 && !args[2].Equals("Default"))
             {
-                Console.WriteLine(item);
+                path = args[2];
             }
+            string wildcard = "*.cs";
+            if (args.Length > 3)
+            {
+                wildcard = args[3];
+            }
+            //Start
+            ChangeModel model = null;
+            if (mode == WorkMode.Preview || mode == WorkMode.Force)
+            {
+                ArrayList files = (new FileListBuilder()).ParseDirectory(pathToStartFolder, wildcard);
+                model = (new GuardAnalyzer()).Analyze(files);
+                foreach (ChangeItem item in model.Items)
+                {
+                    Console.WriteLine(item);
+                }
+                if(mode != WorkMode.Force)
+                {
+                    model.Save(path);
+                    return;
+                }
+            }
+            if (mode == WorkMode.Commit || mode == WorkMode.Force)
+            {
+                if (mode != WorkMode.Force)
+                {
+                    model = ChangeModel.Load(path);
+                }
+                foreach (ChangeItem item in model.Items)
+                {
+                    //      commit changes ?? 
+                }
+            }
+
             Console.ReadKey();
         }
     }
