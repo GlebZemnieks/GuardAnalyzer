@@ -27,21 +27,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
         Commit,
         Force
     }
-
-    static class WorkModeByString
-    {
-        public static WorkMode getMode(string mode)
-        {
-            switch (mode)
-            {
-                case "Preview": return WorkMode.Preview;
-                case "Commit": return WorkMode.Commit;
-                case "Force": return WorkMode.Force;// No testing -> no force mode!
-                default: throw new Exception("Unknown Mode [args[1] = " + mode + "]");
-            }
-        }
-    }
-
+    
     class Program
     {
         static void Main(string[] args)
@@ -51,7 +37,11 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             // arg0 : path to folder
             string pathToStartFolder = args[0];
             // arg1 : work mode
-            WorkMode mode = WorkModeByString.getMode(args[1]);
+            WorkMode mode;
+            if(!Enum.TryParse(args[1], out mode))
+            {
+                throw new Exception("Unknown Mode [args[1] = " + mode + "]");
+            }
             // arg2 : changeModel file (Optional)
             string path = Directory.GetCurrentDirectory() + "\\changes.txt";
             if (args.Length > 2 && !args[2].Equals("Default"))
@@ -254,7 +244,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             string[] lines = File.ReadAllLines(path);
 
             // TODO Add all Guard methods list. 
-            string methodsList = "ArgumentNotNull,ArgumentNotNullOrEmpty,IsNotNull";
+            string methodsList = "ArgumentNotNull,ArgumentNotNullOrEmpty,IsNotNull,ArgumentNull";
             string isMatch = "Guard\\.[" + methodsList + "]";
             
             // Detect lines

@@ -14,6 +14,8 @@ namespace SonDar.ParagonChallenge.Example
 
             Guard.ArgumentNotNull(() => test1);
             Guard.ArgumentNotNull(() => test2);
+
+            Guard.ArgumentNull(() => test2);
         }
 
     }
