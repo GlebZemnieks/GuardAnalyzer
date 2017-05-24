@@ -244,7 +244,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             string[] lines = File.ReadAllLines(path);
 
             // TODO Add all Guard methods list. 
-            string methodsList = "ArgumentNotNull,ArgumentNotNullOrEmpty,IsNotNull,ArgumentNull";
+            string methodsList = "ArgumentNotNullOrEmpty,ArgumentNotNull,IsNotNull,ArgumentNull";
             string isMatch = "Guard\\.[" + methodsList + "]";
             
             // Detect lines
