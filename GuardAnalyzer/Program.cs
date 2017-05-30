@@ -33,14 +33,8 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
     {
         static void Main(string[] args)
         {
-            int i = 0;
-            while (i < 10) {
-                //    Diagnostic.ParseDirectory();
-                i++;
-            }
-            //return;
             // Test data
-            args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Force","Default","Example999*.cs"};
+            args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Preview","Default","Example997*.cs"};
             // arg0 : path to folder
             string pathToStartFolder = args[0];
             // arg1 : work mode
@@ -135,11 +129,6 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                 fileList.AddRange(this.ParseDirectory(directory, wildcard));
             }
             return fileList;
-        }
-        //Get path and find all by wildcard.
-        public ArrayList ParseDirectoryAsync(string path, string wildcard = "*.cs")
-        {
-            return null;
         }
 
     }

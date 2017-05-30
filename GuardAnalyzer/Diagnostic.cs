@@ -27,13 +27,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             ArrayList files = (new FileListBuilder()).ParseDirectory(
                 "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "*.cs");
             swatch.Stop();
-            System.Diagnostics.Stopwatch swatch2 = new System.Diagnostics.Stopwatch();
-            swatch2.Start();
-            ArrayList files2 = (new FileListBuilder()).ParseDirectoryAsync(
-                "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "*.cs");
-            swatch2.Stop();
             Console.WriteLine(swatch.Elapsed);
-            Console.WriteLine(swatch2.Elapsed);
             Console.ReadKey();
         }
 
