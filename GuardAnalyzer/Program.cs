@@ -68,6 +68,9 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             ActionBlock<ChangeModel> commiter = new ActionBlock<ChangeModel>(tempModel => (new GuardAnalyzer()).Commit(tempModel));
 
             //Start
+            // Preview - fileListBuilder->guardAnalyzer->printer->writer
+            // Commit  - loader->printer->commiter
+            // Forse   - fileListBuilder->guardAnalyzer->printer->commiter
             Logger.Log("Preview : ");
             if (mode == WorkMode.Preview || mode == WorkMode.Force)
             {
