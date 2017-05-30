@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using SonDar.Core.Utils;
 using Newtonsoft.Json;
+using System.Threading.Tasks.Dataflow;
 
 
 // TODO MiltiThreading elements
@@ -31,9 +32,15 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
     class Program
     {
         static void Main(string[] args)
-        { 
+        {
+            int i = 0;
+            while (i < 10) {
+                //    Diagnostic.ParseDirectory();
+                i++;
+            }
+            //return;
             // Test data
-            //args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Preview","Default","Example*.cs"};
+            args = new string[] { "C:\\Development\\SonDar\\Paragon\\GuardAnalyzer", "Force","Default","Example999*.cs"};
             // arg0 : path to folder
             string pathToStartFolder = args[0];
             // arg1 : work mode
@@ -54,75 +61,56 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
             {
                 wildcard = args[3];
             }
+            // Blocks list
+            TransformBlock<string, ArrayList> fileListBuilder = new TransformBlock<string, ArrayList>
+                                (domainFolderName => (new FileListBuilder()).ParseDirectory(domainFolderName, wildcard));
+            TransformBlock<ArrayList, ChangeModel> guardAnalyzer = new TransformBlock<ArrayList, ChangeModel>
+                                (fileList => (new GuardAnalyzer()).Prepare(fileList));
+            TransformBlock<string, ChangeModel> loader = new TransformBlock<string, ChangeModel>
+                                (fileName => ChangeModel.Load(fileName));
+            TransformBlock<ChangeModel, ChangeModel> printer = new TransformBlock<ChangeModel, ChangeModel>
+                                (model => model.Print());
+            ActionBlock<ChangeModel> writer = new ActionBlock<ChangeModel>(tempModel => tempModel.Save(path));
+            ActionBlock<ChangeModel> commiter = new ActionBlock<ChangeModel>(tempModel => (new GuardAnalyzer()).Commit(tempModel));
+
             //Start
-            ChangeModel model = null;
+            Logger.Log("Preview : ");
             if (mode == WorkMode.Preview || mode == WorkMode.Force)
             {
-                ArrayList files = (new FileListBuilder()).ParseDirectory(pathToStartFolder, wildcard);
-                model = (new GuardAnalyzer()).Analyze(files);
-                Logger.Log("Preview : ");
-                foreach (ChangeItem item in model.Items)
+                fileListBuilder.LinkTo(guardAnalyzer);
+                fileListBuilder.Completion.ContinueWith(task => guardAnalyzer.Complete());
+
+                guardAnalyzer.LinkTo(printer);
+                guardAnalyzer.Completion.ContinueWith(task => printer.Complete());
+                if (mode != WorkMode.Force)
                 {
-                    Logger.Log(item.ToString());
-                    Logger.Log("");
+                    printer.LinkTo(writer);
+                    printer.Completion.ContinueWith(task => writer.Complete());
+                    fileListBuilder.Post(pathToStartFolder);
+                    fileListBuilder.Complete();
+                    writer.Completion.Wait();
                 }
-                if(mode != WorkMode.Force)
-                {
-                    model.Save(path);
-                    Console.ReadKey();
-                    return;
-                }
+
             }
             if (mode == WorkMode.Commit || mode == WorkMode.Force)
             {
                 if (mode != WorkMode.Force)
                 {
-                    try
-                    {
-                        model = ChangeModel.Load(path);
-                    }
-                    catch
-                    {
-                        Logger.Log("Trouble with parsing '" + path + "'. Call Preview before Commit" );
-                    }
+                    loader.LinkTo(printer);
+                    loader.Completion.ContinueWith(task => printer.Complete());
                 }
-
-                ChangeModel wrongItem = new ChangeModel();
-                bool somethingWrong = false;
-                foreach (ChangeItem item in model.Items)
+                printer.LinkTo(commiter);
+                printer.Completion.ContinueWith(task => commiter.Complete());
+                if (mode != WorkMode.Force)
                 {
-                    Logger.Log("Try to change item : " + item.ToString());
-                    string[] lines = File.ReadAllLines(item.DomainPath);
-                    if (lines[item.Line].Contains(item.From))
-                    {
-                        Logger.Log("OK");
-                        lines[item.Line] = lines[item.Line].Replace(item.From, item.To);
-                    } else
-                    {
-                        somethingWrong = true;
-                        wrongItem.AddItem(item);
-                        continue;
-                    }
-                    Logger.Log("");
-                    using (StreamWriter sw = new StreamWriter(item.DomainPath, false, System.Text.Encoding.Default))
-                    {
-                        foreach(string line in lines)
-                        {
-                            sw.WriteLine(line);
-                        }
-                    }
-                }
-                Logger.Log("Done");
-                if (somethingWrong)
+                    loader.Post(path);
+                    loader.Complete();
+                } else
                 {
-                    wrongItem.Save(path + "wrong");
-                    Logger.Log("Something wrong");
-                    foreach(ChangeItem item in wrongItem.Items)
-                    {
-                         Logger.Log(item.ToString());
-                    }
-
+                    fileListBuilder.Post(pathToStartFolder);
+                    fileListBuilder.Complete();
                 }
+                commiter.Completion.Wait();
             }
 
             Console.ReadKey();
@@ -132,7 +120,7 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
     class FileListBuilder
     {
 
-        //Get path and find all by  wildcard.
+        //Get path and find all by wildcard.
         public ArrayList ParseDirectory(string path, string wildcard = "*.cs")
         {
             ArrayList fileList = new ArrayList();
@@ -147,6 +135,11 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                 fileList.AddRange(this.ParseDirectory(directory, wildcard));
             }
             return fileList;
+        }
+        //Get path and find all by wildcard.
+        public ArrayList ParseDirectoryAsync(string path, string wildcard = "*.cs")
+        {
+            return null;
         }
 
     }
@@ -221,24 +214,34 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                 sw.WriteLine(json);
             }
         }
+        
+        public ChangeModel Print() {
+            foreach (ChangeItem item in Items)
+            {
+                Logger.Log(item.ToString());
+                Logger.Log("");
+            }
+            // for TransformBlock usage
+            return this;
+        }
 
     }
 
     class GuardAnalyzer
     {
         // Call this.AnalyzeFile for all file in list and create general ChangeModel. 
-        public ChangeModel Analyze(ArrayList files)
+        public ChangeModel Prepare(ArrayList files)
         {
             ChangeModel changes = new ChangeModel();
             foreach (String fileName in files)
             {
-                changes.AddItems(this.AnalyzeFile(fileName));
+                changes.AddItems(this.PrepareFile(fileName));
             }
             return changes;
         }
 
         // parse file by recursive expression and return list of ChangeItems
-        private ArrayList AnalyzeFile(string path)
+        private ArrayList PrepareFile(string path)
         {
             ArrayList candidateItems = new ArrayList();
             string[] lines = File.ReadAllLines(path);
@@ -271,10 +274,40 @@ namespace SonDar.ParagonChallenge.GuardAnalyzer
                     finalResult.Add(item);
                     continue;
                 }
-                Logger.Log("Ignore line : \"" + item.From + "\" because lambda param is \"" + rawParam + "\"");
+                //Logger.Log("Ignore line : \"" + item.From + "\" because lambda param is \"" + rawParam + "\"");
 
             }
             return finalResult; 
+        }
+
+        public ChangeModel Commit(ChangeModel model)
+        {
+            ChangeModel wrongItem = new ChangeModel();
+            foreach (ChangeItem item in model.Items)
+            {
+                Logger.Log("Try to change item : " + item.ToString());
+                string[] lines = File.ReadAllLines(item.DomainPath);
+                if (lines[item.Line].Contains(item.From))
+                {
+                    Logger.Log("OK");
+                    lines[item.Line] = lines[item.Line].Replace(item.From, item.To);
+                }
+                else
+                {
+                    wrongItem.AddItem(item);
+                    continue;
+                }
+                Logger.Log("");
+                using (StreamWriter sw = new StreamWriter(item.DomainPath, false, System.Text.Encoding.Default))
+                {
+                    foreach (string line in lines)
+                    {
+                        sw.WriteLine(line);
+                    }
+                }
+            }
+            Logger.Log("Done");
+            return wrongItem;
         }
 
     }
